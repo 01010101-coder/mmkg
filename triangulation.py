@@ -1,64 +1,123 @@
-points = [(8, -8), (10, 0), (7, 3), (-5, 10), (-5, 1),
-          (-4, 0), (-7, -1), (-3, -5), (-4, -2)]
+import random
+import matplotlib.pyplot as plt
 
-def oktan_ugol(point):
-    x = point[0]
-    y = point[1]
 
-    if 0 <= y < x:
+def create_points(number=10, x=50):  # генерируем точки
+    points = []
+    for i in range(number):
+        points.append([random.randint(-x, x), random.randint(-x, x)])
+    return points
+
+
+def plot_polygon(polygon, title="Полигон", line=True):  # выводим полигон
+    if line:  # если нам нужны отрезки
+        polygon.append(polygon[0])
+        x, y = zip(*polygon)
+        polygon.pop(-1)
+        plt.plot(x, y, 'o-')
+        plt.title(title)
+        plt.show()
+    else:  # если нам нужны только точки
+        x, y = zip(*points)
+        plt.scatter(x, y)
+        plt.title(title)
+        plt.show()
+
+
+def orientation(p, q, r):  # проверяем ориентацию трех точек
+    val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+    if val == 0:
+        return 0
+    elif val > 0:
         return 1
-    elif 0 < x <= y:
+    else:
         return 2
-    elif 0 <= -x < y:
-        return 3
-    elif 0 < y <= -x:
-        return 4
-    elif x < y <= 0:
-        return 5
-    elif y <= x < 0:
-        return 6
-    elif y < -x <= 0:
-        return 7
-    else:
-        return 8
 
-def vector(point1, point2):
-    return (point2[0] - point1[0], point2[1] - point1[1])
 
-def opredelitel(point1, point2):
-    opredelitel = (point1[0] * point2[1]) - (point1[1] * point2[0])
-    if opredelitel > 0:
-        result = 1
-    elif opredelitel < 0:
-        result = -1
-    else:
-        result = 0
+def is_polygon_simple(points):  # проверка на самопересекаемость полигона
+    def do_lines_intersect(p1, p2, q1, q2):  # пересечение двух отрезков
+        def on_segment(p, q, r):  # находится ли точка на отрезке
+            if min(p[0], r[0]) <= q[0] <= max(p[0], r[0]) and min(p[1], r[1]) <= q[1] <= max(p[1], r[1]):
+                return True
+            return False  # находится ли точка на отрезке
 
-    return result
+        o1 = orientation(p1, p2, q1)
+        o2 = orientation(p1, p2, q2)
+        o3 = orientation(q1, q2, p1)
+        o4 = orientation(q1, q2, p2)
 
-vectors = []
+        if o1 != o2 and o3 != o4:
+            return True
 
-for i in range(len(points) - 1):
-    vectors.append(vector(points[i], points[(i + 1)]))
+        if o1 == 0 and on_segment(p1, q1, p2):
+            return True
+        if o2 == 0 and on_segment(p1, q2, p2):
+            return True
+        if o3 == 0 and on_segment(q1, p1, q2):
+            return True
+        if o4 == 0 and on_segment(q1, p2, q2):
+            return True
 
-vectors.append(vector(points[-1], points[0]))
+        return False
 
-oktan_ugols = []
-for vector in vectors:
-    oktan_ugols.append(oktan_ugol(vector))
+    n = len(points)
+    if n < 3:
+        return False
 
-print(oktan_ugols)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if j != (i + 1) % n and j != (i - 1 + n) % n:
+                p1, p2 = points[i], points[(i + 1) % n]
+                q1, q2 = points[j], points[(j + 1) % n]
+                if do_lines_intersect(p1, p2, q1, q2):
+                    return False
+    return True
 
-oktan_ugol_difs = []
-for i in range(len(oktan_ugols) - 1):
-    oktan_ugol_difs.append(oktan_ugols[i+1] - oktan_ugols[i])
 
-oktan_ugol_difs.append(oktan_ugols[0] - oktan_ugols[-1])
+def jarvis_march(points):  # алгоритм Джарвиса для нахождения минимальной выпуклой оболочки
+    n = len(points)
 
-print(oktan_ugol_difs)
+    hull = []
 
-for i in range(len(oktan_ugol_difs)):
-    while(abs(oktan_ugol_difs[i]) > 4 or oktan_ugol_difs[i] == 0):
-        oktan_ugol_difs[i] += opredelitel(points[i-1], points[i])
+    l = min(range(n), key=lambda i: points[i])
+    p = l
+    while True:
+        hull.append(points[p])
+        q = (p + 1) % n
+        for i in range(n):
+            if orientation(points[p], points[q], points[i]) == 2:
+                q = i
+        p = q
+        if p == l:
+            break
 
-print(oktan_ugol_difs)
+    return hull
+
+
+def construct_simple_polygon(points):  # главная функция
+    if len(points) < 3:
+        return points
+
+    hull_points = jarvis_march(points)
+    plot_polygon(hull_points, "Минимальная выпуклая оболочка")
+
+    remaining_points = [p for p in points if p not in hull_points]
+
+    for p in remaining_points:
+        for i in range(len(hull_points)):
+            new_polygon = hull_points[:i] + [p] + hull_points[i:]
+            if is_polygon_simple(new_polygon):
+                hull_points = new_polygon
+                break
+
+    return hull_points
+
+
+points = create_points(20, 70)
+plot_polygon(points, "Множество точек", False)
+print(points)
+
+simple_polygon = construct_simple_polygon(points)
+print(simple_polygon)
+
+plot_polygon(simple_polygon, "Самонепересекающийся полигон")

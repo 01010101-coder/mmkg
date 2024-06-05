@@ -1,7 +1,8 @@
-xA, yA = -1, 1
-xB, yB = 1, 4
+xA, yA = -1, 22
+xB, yB = 17, 1
 
-window_cord = [2, 0, 5, 0]
+window_cord = [11, 0, 15, 0]
+
 
 def find_code(xA, yA, window_cord):
     result = ""

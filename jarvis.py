@@ -1,4 +1,4 @@
-points = [(7, 6, 1), (8, 4, 2), (3, -4, 3), (-3, 0, 4), (-2, 3, 5), (2, 0, 6), (-6, -4, 7)]
+points = [(-6, 6, 1), (4, 4, 2), (2, 8, 3), (-6, -6, 4), (2, 7, 5), (1, -9, 6), (7, -9, 7)]
 old_points = points.copy()
 points = sorted(points, key=lambda point: (point[1], point[0]))
 
